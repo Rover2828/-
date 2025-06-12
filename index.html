@@ -479,24 +479,22 @@
                 } else {
                     zipBlob = await zipWriter.close();
                 }
-                // 触发邮箱客户端并附加zip
-                const adminMail = "liujunkaiqianyuyouzhen@Outlook.com";
-                const subject = encodeURIComponent(`新漂流瓶投递 - ${bottleId}`);
-                const body = encodeURIComponent(`收到一个新的漂流瓶，编号：${bottleId}\n\n请见附件zip文件。`);
-                // 生成zip文件下载链接
+                // 生成zip文件下载链接并确保下载完成后再唤起邮箱
                 const zipUrl = URL.createObjectURL(zipBlob);
-                // 创建临时a标签下载zip
                 const a = document.createElement('a');
                 a.href = zipUrl;
                 a.download = `bottle_${bottleId}.zip`;
                 a.style.display = 'none';
                 document.body.appendChild(a);
                 a.click();
-                setTimeout(()=>{URL.revokeObjectURL(zipUrl);a.remove();}, 2000);
-                // 唤起邮箱（无法自动附加文件，需用户手动添加zip）
-                window.location.href = `mailto:${adminMail}?subject=${subject}&body=${body}`;
-                alert('已为你下载zip文件，请在邮箱中手动添加zip附件后发送！');
-                // --- end zip & mailto ---
+                // 等待下载完成后再唤起邮箱
+                setTimeout(()=>{
+                    URL.revokeObjectURL(zipUrl);
+                    a.remove();
+                    // 唤起邮箱（无法自动附加文件，需用户手动添加zip）
+                    window.location.href = `mailto:${adminMail}?subject=${subject}&body=${body}`;
+                    alert('已为你下载zip文件，请在邮箱中手动添加zip附件后发送！');
+                }, 1000);
             }, 1200);
             this.reset();
             customTime.style.display = 'none';

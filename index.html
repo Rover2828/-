@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小小漂流瓶（rover制作）</title>
+    <style>
+/*
+ *                                        _ooOoo_
+ *                                       o8888888o
+ *                                       88" . "88
+ *                                       (| -_- |)
+ *                                        O\ = /O
+ *                                    ____/`---'\____
+ *                                  .   ' \\| |// `.
+ *                                   / \\||| : |||// \
+ *                                 / _||||| -:- |||||- \
+ *                                   | | \\\ - /// | |
+ *                                 | \_| ''\---/'' | |
+ *                                  \ .-\__ `-` ___/-. /
+ *                               ___`. .' /--.--\ `. . __
+ *                            ."" '< `.___\_<|>_/___.' >'"".
+ *                           | | : `- \`.;`\ _ /`;.`/ - ` : | |
+ *                             \ \ `-. \_ __\ /__ _/ .-` / /
+ *                     ======`-.____`-.___\_____/___.-`____.-'======
+ *                                        `=---='
+ *
+ *                     .............................................
+ *                                    佛祖保佑             永无BUG
+ */
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: linear-gradient(to bottom, #aee1f9 0%, #f9f9f9 100%);
+            font-family: 'Segoe UI', 'Microsoft YaHei', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+            padding: 40px 30px 30px 30px;
+            max-width: 400px;
+            width: 90%;
+            position: relative;
+        }
+        .bottle-img {
+            width: 120px;
+            display: block;
+            margin: 0 auto 20px auto;
+        }
+        h1 {
+            text-align: center;
+            color: #2a5d84;
+            margin-bottom: 20px;
+        }
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            border-radius: 10px;
+            border: 1px solid #b3d7e6;
+            padding: 10px;
+            font-size: 16px;
+            resize: vertical;
+            margin-bottom: 18px;
+        }
+        label {
+            font-size: 15px;
+            color: #2a5d84;
+        }
+        .time-select {
+            width: 100%;
+            margin-bottom: 18px;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid #b3d7e6;
+            font-size: 15px;
+        }
+        .custom-time {
+            display: none;
+            margin-top: 8px;
+        }
+        .send-btn {
+            width: 100%;
+            background: #2a5d84;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 17px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .send-btn:hover {
+            background: #1b3c54;
+        }
+        .success-message {
+            color: #2a5d84;
+            text-align: center;
+            margin-top: 18px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img class="bottle-img" src="https://img.zcool.cn/community/01b1e95d2e2e2fa801216518a7e1e2.jpg@1280w_1l_2o_100sh.jpg" alt="漂流瓶">
+        <h1>漂流瓶时光信</h1>
+        <form id="bottleForm" autocomplete="off">
+            <!-- 匿名投递 -->
+            <label><input type="checkbox" id="anonymous" name="anonymous" style="margin-right:6px;">匿名投递</label>
+            <br><br>
+            <!-- 主题皮肤切换 -->
+            <label for="theme">主题皮肤：</label>
+            <select id="theme" name="theme" class="time-select" style="margin-bottom:16px;">
+                <option value="ocean">海洋</option>
+                <option value="night">夜空</option>
+                <option value="forest">森林</option>
+                <option value="default" selected>默认</option>
+            </select>
+            <label for="recipient">收件人昵称/邮箱：</label>
+            <input type="text" id="recipient" name="recipient" required placeholder="请输入收件人昵称或邮箱" style="width:100%;margin-bottom:16px;padding:8px;border-radius:8px;border:1px solid #b3d7e6;font-size:15px;">
+            <label for="type">信件类型：</label>
+            <select id="type" name="type" class="time-select" style="margin-bottom:16px;">
+                <option value="祝福">祝福</option>
+                <option value="鼓励">鼓励</option>
+                <option value="秘密">秘密</option>
+                <option value="梦想">梦想</option>
+                <option value="其他">其他</option>
+            </select>
+            <label for="letter">写一封信（给自己或他人）：</label>
+            <textarea id="letter" name="letter" required maxlength="300" placeholder="在这里写下你的心里话……" oninput="updateWordCount()"></textarea>
+            <div style="text-align:right;color:#888;font-size:13px;margin-bottom:8px;">字数：<span id="wordCount">0</span>/300</div>
+            <label for="image">上传图片/表情：</label>
+            <input type="file" id="image" name="image" accept="image/*" style="margin-bottom:16px;">
+            <!-- 自定义漂流瓶图片 -->
+            <label for="bottleImg">自定义漂流瓶图片：</label>
+            <input type="file" id="bottleImg" accept="image/*" style="margin-bottom:16px;">
+            <label for="voice">录制语音留言：</label>
+            <button type="button" id="recordBtn" style="width:100%;margin-bottom:10px;">开始录音</button>
+            <audio id="audioPreview" controls style="display:none;width:100%;margin-bottom:10px;"></audio>
+            <label for="time">选择收信时间：</label>
+            <select id="time" class="time-select" name="time">
+                <option value="5">5年后</option>
+                <option value="10">10年后</option>
+                <option value="20">20年后</option>
+                <option value="30">30年后</option>
+                <option value="custom">自定义</option>
+            </select>
+            <input type="number" id="customTime" class="custom-time" min="1" max="100" placeholder="请输入年数" />
+            <label for="password">设置信件密码（可选）：</label>
+            <input type="password" id="password" name="password" placeholder="设置密码后仅收件人可查看" style="width:100%;margin-bottom:16px;padding:8px;border-radius:8px;border:1px solid #b3d7e6;font-size:15px;">
+            <label for="remind">到期提醒方式：</label>
+            <select id="remind" name="remind" class="time-select" style="margin-bottom:16px;">
+                <option value="none">不提醒</option>
+                <option value="email">邮件提醒</option>
+                <option value="sms">短信提醒</option>
+            </select>
+            <!-- 发送前预览 -->
+            <button type="button" class="send-btn" id="previewBtn" style="background:#6bb6ff;margin-bottom:10px;">预览信件</button>
+            <button type="submit" class="send-btn">发送漂流瓶</button>
+        </form>
+        <div class="success-message" id="successMsg" style="display:none;">漂流瓶已投出，期待未来的你/TA收到！</div>
+        <!-- 祝福卡片预览弹窗 -->
+        <div id="previewModal" style="display:none;position:fixed;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.4);z-index:999;align-items:center;justify-content:center;">
+            <div style="background:#fff;border-radius:16px;max-width:350px;width:90vw;padding:24px;box-shadow:0 4px 24px #0002;position:relative;">
+                <span id="closePreview" style="position:absolute;right:16px;top:8px;cursor:pointer;font-size:20px;">×</span>
+                <div id="previewContent"></div>
+            </div>
+        </div>
+        <!-- 二维码展示 -->
+        <div id="qrcode" style="display:none;text-align:center;margin-top:20px;"></div>
+        <!-- 多语言切换 -->
+        <div style="text-align:center;margin-top:18px;">
+            <button id="langBtn" style="background:#eee;border:none;padding:6px 16px;border-radius:8px;cursor:pointer;">English</button>
+        </div>
+        <!-- 发送进度条 -->
+        <div id="progressBar" style="display:none;width:100%;height:8px;background:#eaf6fb;border-radius:8px;margin-top:10px;overflow:hidden;">
+            <div id="progressInner" style="height:100%;width:0;background:#6bb6ff;"></div>
+        </div>
+        <!-- 发送历史记录 -->
+        <div id="history" style="margin-top:24px;"></div>
+    </div>
+    <!-- zip.js & smtp.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@zip.js/zip.js@2.7.28/dist/zip-full.min.js"></script>
+    <script src="https://smtpjs.com/v3/smtp.js"></script>
+    <script>
+        const timeSelect = document.getElementById('time');
+        const customTime = document.getElementById('customTime');
+        timeSelect.addEventListener('change', function() {
+            if (this.value === 'custom') {
+                customTime.style.display = 'block';
+                customTime.required = true;
+            } else {
+                customTime.style.display = 'none';
+                customTime.required = false;
+            }
+        });
+        // 语音录制功能
+        let mediaRecorder, audioChunks = [];
+        const recordBtn = document.getElementById('recordBtn');
+        const audioPreview = document.getElementById('audioPreview');
+        let isRecording = false;
+        recordBtn.addEventListener('click', async function() {
+            if (!isRecording) {
+                if (!navigator.mediaDevices) {
+                    alert('当前浏览器不支持录音');
+                    return;
+                }
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new window.MediaRecorder(stream);
+                audioChunks = [];
+                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    audioPreview.src = audioUrl;
+                    audioPreview.style.display = 'block';
+                };
+                mediaRecorder.start();
+                recordBtn.textContent = '停止录音';
+                isRecording = true;
+            } else {
+                mediaRecorder.stop();
+                recordBtn.textContent = '开始录音';
+                isRecording = false;
+            }
+        });
+        // 漂流瓶地图（简单模拟）
+        function showBottleMap() {
+            const mapDiv = document.getElementById('bottleMap');
+            mapDiv.style.display = 'block';
+            mapDiv.innerHTML = `<img src='https://img.zcool.cn/community/01b1e95d2e2e2fa801216518a7e1e2.jpg@1280w_1l_2o_100sh.jpg' style='width:80px;'><br><span style='color:#2a5d84;'>你的漂流瓶正在世界各地漂流...</span>`;
+        }
+        // 投递动画
+        function playSendAnimation() {
+            const img = document.querySelector('.bottle-img');
+            img.animate([
+                { transform: 'translateY(0)' },
+                { transform: 'translateY(-40px) scale(1.2)' },
+                { transform: 'translateY(100vh) scale(0.5)', opacity: 0 }
+            ], {
+                duration: 1200,
+                easing: 'ease-in',
+            });
+        }
+        // 主题皮肤切换
+        document.getElementById('theme').addEventListener('change', function() {
+            const theme = this.value;
+            if(theme==='ocean') document.body.style.background = 'linear-gradient(to bottom,#aee1f9 0%,#f9f9f9 100%)';
+            else if(theme==='night') document.body.style.background = 'linear-gradient(to bottom,#232946 0%,#b8c1ec 100%)';
+            else if(theme==='forest') document.body.style.background = 'linear-gradient(to bottom,#a8e6cf 0%,#f9f9f9 100%)';
+            else document.body.style.background = 'linear-gradient(to bottom,#aee1f9 0%,#f9f9f9 100%)';
+        });
+        // 字数统计
+        function updateWordCount() {
+            document.getElementById('wordCount').textContent = document.getElementById('letter').value.length;
+        }
+        // 多语言切换
+        const langMap = {
+            zh: {
+                title: '小小漂流瓶（rover制作）',
+                h1: '漂流瓶时光信',
+                anonymous: '匿名投递',
+                theme: '主题皮肤：',
+                recipient: '收件人昵称/邮箱：',
+                type: '信件类型：',
+                typeOpts: ['祝福','鼓励','秘密','梦想','其他'],
+                letter: '写一封信（给自己或他人）：',
+                wordCount: '字数',
+                uploadImg: '上传图片/表情：',
+                customBottle: '自定义漂流瓶图片：',
+                record: '录制语音留言：',
+                time: '选择收信时间：',
+                timeOpts: ['5年后','10年后','20年后','30年后','自定义'],
+                customTime: '请输入年数',
+                password: '设置信件密码（可选）：',
+                passwordPh: '设置密码后仅收件人可查看',
+                remind: '到期提醒方式：',
+                remindOpts: ['不提醒','邮件提醒','短信提醒'],
+                preview: '预览信件',
+                send: '发送漂流瓶',
+                success: '漂流瓶已投出，期待未来的你/TA收到！',
+                history: '发送历史',
+                bottleId: '漂流瓶编号：',
+                progress: '发送中...',
+                english: 'English',
+                chinese: '中文',
+                map: '你的漂流瓶正在世界各地漂流...'
+            },
+            en: {
+                title: 'Drifting Bottle (by rover)',
+                h1: 'Drifting Bottle Time Letter',
+                anonymous: 'Send Anonymously',
+                theme: 'Theme:',
+                recipient: 'Recipient Nickname/Email:',
+                type: 'Letter Type:',
+                typeOpts: ['Blessing','Encouragement','Secret','Dream','Other'],
+                letter: 'Write a letter (to yourself or others):',
+                wordCount: 'Words',
+                uploadImg: 'Upload Image/Emoji:',
+                customBottle: 'Custom Bottle Image:',
+                record: 'Record Voice Message:',
+                time: 'Choose Delivery Time:',
+                timeOpts: ['5 years later','10 years later','20 years later','30 years later','Custom'],
+                customTime: 'Enter years',
+                password: 'Set Letter Password (optional):',
+                passwordPh: 'Only recipient can view with password',
+                remind: 'Reminder:',
+                remindOpts: ['No reminder','Email','SMS'],
+                preview: 'Preview',
+                send: 'Send Bottle',
+                success: 'Bottle sent! Waiting for the future you/them to receive!',
+                history: 'Sent History',
+                bottleId: 'Bottle ID:',
+                progress: 'Sending...',
+                english: 'English',
+                chinese: '中文',
+                map: 'Your bottle is drifting around the world...'
+            }
+        };
+        let isEn = false;
+        function setLang(en) {
+            const lang = en ? langMap.en : langMap.zh;
+            document.title = lang.title;
+            document.querySelector('h1').textContent = lang.h1;
+            document.getElementById('anonymous').nextSibling.nodeValue = lang.anonymous;
+            document.querySelector('label[for="theme"]').textContent = lang.theme;
+            document.querySelector('label[for="recipient"]').textContent = lang.recipient;
+            document.querySelector('label[for="type"]').textContent = lang.type;
+            const typeSel = document.getElementById('type');
+            typeSel.innerHTML = lang.typeOpts.map(t=>`<option value="${t}">${t}</option>`).join('');
+            document.querySelector('label[for="letter"]').textContent = lang.letter;
+            document.querySelector('div[style*="wordCount"] span').nextSibling.textContent = '/300';
+            document.querySelector('label[for="image"]').textContent = lang.uploadImg;
+            document.querySelector('label[for="bottleImg"]').textContent = lang.customBottle;
+            document.querySelector('label[for="voice"]').textContent = lang.record;
+            document.querySelector('label[for="time"]').textContent = lang.time;
+            const timeSel = document.getElementById('time');
+            timeSel.innerHTML = lang.timeOpts.map((t,i)=>`<option value="${i<4?parseInt(t):'custom'}">${t}</option>`).join('');
+            document.getElementById('customTime').placeholder = lang.customTime;
+            document.querySelector('label[for="password"]').textContent = lang.password;
+            document.getElementById('password').placeholder = lang.passwordPh;
+            document.querySelector('label[for="remind"]').textContent = lang.remind;
+            const remindSel = document.getElementById('remind');
+            remindSel.innerHTML = lang.remindOpts.map((t,i)=>`<option value="${['none','email','sms'][i]}">${t}</option>`).join('');
+            document.getElementById('previewBtn').textContent = lang.preview;
+            document.querySelector('button[type="submit"]').textContent = lang.send;
+            document.getElementById('successMsg').textContent = lang.success;
+            document.getElementById('langBtn').textContent = en ? lang.chinese : lang.english;
+            // 历史、二维码、地图等可按需扩展
+        }
+        document.getElementById('langBtn').onclick = function() {
+            isEn = !isEn;
+            setLang(isEn);
+        };
+        setLang(false);
+        // 匿名投递
+        document.getElementById('anonymous').addEventListener('change',function(){
+            document.getElementById('recipient').disabled = this.checked;
+        });
+        // 发送前预览
+        document.getElementById('previewBtn').onclick = function(){
+            let html = `<b>收件人：</b>${document.getElementById('anonymous').checked?'匿名':document.getElementById('recipient').value}<br>`;
+            html += `<b>类型：</b>${document.getElementById('type').value}<br>`;
+            html += `<b>内容：</b>${document.getElementById('letter').value}<br>`;
+            html += `<b>收信时间：</b>${document.getElementById('time').value==='custom'?document.getElementById('customTime').value+'年后':document.getElementById('time').options[document.getElementById('time').selectedIndex].text}<br>`;
+            html += `<b>提醒：</b>${document.getElementById('remind').value}<br>`;
+            if(document.getElementById('audioPreview').src) html += `<b>语音：</b><audio src='${document.getElementById('audioPreview').src}' controls style='width:100%;'></audio><br>`;
+            document.getElementById('previewContent').innerHTML = html;
+            document.getElementById('previewModal').style.display = 'flex';
+        };
+        document.getElementById('closePreview').onclick = function(){
+            document.getElementById('previewModal').style.display = 'none';
+        };
+        // 允许自定义漂流瓶图片
+        document.getElementById('bottleImg').addEventListener('change',function(e){
+            const file = e.target.files[0];
+            if(file){
+                const reader = new FileReader();
+                reader.onload = function(evt){
+                    document.querySelector('.bottle-img').src = evt.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        // 发送历史记录本地保存
+        function saveHistory(data){
+            let arr = JSON.parse(localStorage.getItem('bottleHistory')||'[]');
+            arr.unshift(data);
+            localStorage.setItem('bottleHistory',JSON.stringify(arr.slice(0,10)));
+        }
+        function renderHistory(){
+            let arr = JSON.parse(localStorage.getItem('bottleHistory')||'[]');
+            let html = '<h3 style="color:#2a5d84;">发送历史</h3>';
+            arr.forEach((item,i)=>{
+                html += `<div style='background:#eaf6fb;border-radius:10px;padding:10px 15px;margin-bottom:10px;'>
+                    <b>${item.time}</b> <span style='color:#888;'>${item.type}</span><br>${item.content.substring(0,20)}...<br><span style='font-size:12px;color:#aaa;'>${item.date}</span>
+                </div>`;
+            });
+            document.getElementById('history').innerHTML = html;
+        }
+        renderHistory();
+        // 发送进度条
+        function showProgress(){
+            document.getElementById('progressBar').style.display = 'block';
+            let inner = document.getElementById('progressInner');
+            inner.style.width = '0';
+            let w = 0;
+            let timer = setInterval(()=>{
+                w+=10;
+                inner.style.width = w+'%';
+                if(w>=100){clearInterval(timer);}
+            },80);
+        }
+        // 发送后生成二维码和祝福卡片
+        function showQRCode(id){
+            document.getElementById('qrcode').style.display = 'block';
+            document.getElementById('qrcode').innerHTML = `<div style='margin-bottom:8px;'>漂流瓶编号：<b>${id}</b></div><img src='https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent('bottle-'+id)}' alt='二维码'>`;
+        }
+        document.getElementById('bottleForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            showProgress();
+            playSendAnimation();
+            setTimeout(async () => {
+                document.getElementById('successMsg').style.display = 'block';
+                showBottleMap();
+                // 生成唯一编号
+                const bottleId = 'B'+Date.now()+Math.floor(Math.random()*1000);
+                showQRCode(bottleId);
+                // 保存历史
+                saveHistory({
+                    id:bottleId,
+                    type:document.getElementById('type').value,
+                    content:document.getElementById('letter').value,
+                    time:document.getElementById('time').value==='custom'?document.getElementById('customTime').value+'年后':document.getElementById('time').options[document.getElementById('time').selectedIndex].text,
+                    date:new Date().toLocaleString()
+                });
+                renderHistory();
+                // 生成祝福卡片图片（简单实现）
+                let card = document.createElement('canvas');
+                card.width = 320; card.height = 180;
+                let ctx = card.getContext('2d');
+                ctx.fillStyle = '#aee1f9'; ctx.fillRect(0,0,320,180);
+                ctx.fillStyle = '#2a5d84'; ctx.font = 'bold 18px Arial';
+                ctx.fillText(document.getElementById('type').value,20,40);
+                ctx.font = '15px Arial';
+                ctx.fillText(document.getElementById('letter').value.substring(0,18)+'...',20,80);
+                ctx.font = '12px Arial'; ctx.fillStyle = '#555';
+                ctx.fillText('编号:'+bottleId,20,160);
+                let img = document.createElement('img');
+                img.src = card.toDataURL();
+                document.getElementById('qrcode').appendChild(img);
+
+                // --- 打包zip ---
+                const zipWriter = new zip.ZipWriter(new zip.BlobWriter("application/zip"));
+                // 文本内容
+                const letterContent = `编号: ${bottleId}\n类型: ${document.getElementById('type').value}\n收件人: ${document.getElementById('anonymous').checked?'匿名':document.getElementById('recipient').value}\n内容: ${document.getElementById('letter').value}\n收信时间: ${document.getElementById('time').value==='custom'?document.getElementById('customTime').value+'年后':document.getElementById('time').options[document.getElementById('time').selectedIndex].text}\n提醒: ${document.getElementById('remind').value}`;
+                await zipWriter.add('letter.txt', new zip.TextReader(letterContent));
+                // 图片
+                const imgFile = document.getElementById('image').files[0];
+                if(imgFile) await zipWriter.add(imgFile.name, new zip.BlobReader(imgFile));
+                // 语音
+                if(audioPreview.src) {
+                    const audioBlob = await fetch(audioPreview.src).then(r=>r.blob());
+                    await zipWriter.add('voice.wav', new zip.BlobReader(audioBlob));
+                }
+                // 祝福卡片
+                await zipWriter.add('card.png', new zip.BlobReader(await fetch(img.src).then(r=>r.blob())));
+                // 密码加密（可选）
+                const pwd = document.getElementById('password').value;
+                let zipBlob;
+                if(pwd) {
+                    zipBlob = await zipWriter.close({password: pwd});
+                } else {
+                    zipBlob = await zipWriter.close();
+                }
+                // 发送邮件
+                const adminMail = "liujunkaiqianyuyouzhen@Outlook.com"; 
+                window.Email.send({
+                    SecureToken: "YOUR_SMTPJS_TOKEN", // TODO: 替换为smtpjs token
+                    To: adminMail,
+                    From: adminMail,
+                    Subject: `新漂流瓶投递 - ${bottleId}`,
+                    Body: `收到一个新的漂流瓶，编号：${bottleId}`,
+                    Attachments: [
+                        {
+                            name: `bottle_${bottleId}.zip`,
+                            data: await blobToBase64(zipBlob)
+                        }
+                    ]
+                }).then(m=>{
+                    alert('漂流瓶已发送至管理员邮箱！');
+                }).catch(()=>{
+                    alert('邮件发送失败，请联系管理员！');
+                });
+                // --- end zip & mail ---
+            }, 1200);
+            this.reset();
+            customTime.style.display = 'none';
+            audioPreview.style.display = 'none';
+            document.getElementById('progressBar').style.display = 'none';
+        });
+        // blob转base64
+        async function blobToBase64(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        }
+    </script>
+</body>
+</html>

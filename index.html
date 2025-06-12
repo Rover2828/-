@@ -479,26 +479,24 @@
                 } else {
                     zipBlob = await zipWriter.close();
                 }
-                // 发送邮件
-                const adminMail = "liujunkaiqianyuyouzhen@Outlook.com"; 
-                window.Email.send({
-                    SecureToken: "YOUR_SMTPJS_TOKEN", // TODO: 替换为smtpjs token
-                    To: adminMail,
-                    From: adminMail,
-                    Subject: `新漂流瓶投递 - ${bottleId}`,
-                    Body: `收到一个新的漂流瓶，编号：${bottleId}`,
-                    Attachments: [
-                        {
-                            name: `bottle_${bottleId}.zip`,
-                            data: await blobToBase64(zipBlob)
-                        }
-                    ]
-                }).then(m=>{
-                    alert('漂流瓶已发送至管理员邮箱！');
-                }).catch(()=>{
-                    alert('邮件发送失败，请联系管理员！');
-                });
-                // --- end zip & mail ---
+                // 触发邮箱客户端并附加zip
+                const adminMail = "liujunkaiqianyuyouzhen@Outlook.com";
+                const subject = encodeURIComponent(`新漂流瓶投递 - ${bottleId}`);
+                const body = encodeURIComponent(`收到一个新的漂流瓶，编号：${bottleId}\n\n请见附件zip文件。`);
+                // 生成zip文件下载链接
+                const zipUrl = URL.createObjectURL(zipBlob);
+                // 创建临时a标签下载zip
+                const a = document.createElement('a');
+                a.href = zipUrl;
+                a.download = `bottle_${bottleId}.zip`;
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(()=>{URL.revokeObjectURL(zipUrl);a.remove();}, 2000);
+                // 唤起邮箱（无法自动附加文件，需用户手动添加zip）
+                window.location.href = `mailto:${adminMail}?subject=${subject}&body=${body}`;
+                alert('已为你下载zip文件，请在邮箱中手动添加zip附件后发送！');
+                // --- end zip & mailto ---
             }, 1200);
             this.reset();
             customTime.style.display = 'none';

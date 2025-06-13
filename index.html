@@ -26,8 +26,33 @@
  *                                        `=---='
  *
  *                     .............................................
- *                                    佛祖保佑             永无BUG
+ *                              佛祖保佑             永无BUG
  */
+ /*
+ *                                        _ooOoo_
+ *                                       o8888888o
+ *                                       88" . "88
+ *                                       (| -_- |)
+ *                                        O\ = /O
+ *                                    ____/`---'\____
+ *                                  .   ' \\| |// `.
+ *                                   / \\||| : |||// \
+ *                                 / _||||| -:- |||||- \
+ *                                   | | \\\ - /// | |
+ *                                 | \_| ''\---/'' | |
+ *                                  \ .-\__ `-` ___/-. /
+ *                               ___`. .' /--.--\ `. . __
+ *                            ."" '< `.___\_<|>_/___.' >'"".
+ *                           | | : `- \`.;`\ _ /`;.`/ - ` : | |
+ *                             \ \ `-. \_ __\ /__ _/ .-` / /
+ *                     ======`-.____`-.___\_____/___.-`____.-'======
+ *                                        `=---='
+ *
+ *                     .............................................
+ *                              佛祖保佑             永无BUG
+ */
+ /*卢小天不要偷我代码！*/
+ /*版权申明：由rover集团开发*/
         body {
             margin: 0;
             padding: 0;
@@ -111,10 +136,10 @@
         <img class="bottle-img" src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80" alt="漂流瓶">
         <h1>漂流瓶里的信</h1>
         <form id="bottleForm" autocomplete="off">
-            <!-- 匿名投递 -->
+            <!-- 匿名投递 （bushi）-->
             <label><input type="checkbox" id="anonymous" name="anonymous" style="margin-right:6px;">匿名投递</label>
             <br><br>
-            <!-- 主题皮肤切换 -->
+            <!-- 主题皮肤切换（good） -->
             <label for="theme">主题皮肤：</label>
             <select id="theme" name="theme" class="time-select" style="margin-bottom:16px;">
                 <option value="ocean">海洋</option>
@@ -137,7 +162,7 @@
             <div id="wordCountWrap" style="text-align:right;color:#888;font-size:13px;margin-bottom:8px;">字数：<span id="wordCount">0</span>/300</div>
             <label for="image">上传图片/表情：</label>
             <input type="file" id="image" name="image" accept="image/*" style="margin-bottom:16px;">
-            <!-- 自定义漂流瓶图片 -->
+            <!-- 自定义漂流瓶图片（虽然不会上传） -->
             <label for="bottleImg">自定义漂流瓶图片：</label>
             <input type="file" id="bottleImg" accept="image/*" style="margin-bottom:16px;">
             <label for="voice">录制语音留言：</label>
@@ -581,7 +606,11 @@
                 await zipWriter.add('letter.txt', new zip.TextReader(letterContent));
                 // 图片
                 const imgFile = document.getElementById('image').files[0];
-                if(imgFile) await zipWriter.add(imgFile.name, new zip.BlobReader(imgFile));
+                let imgFileName = imgFile ? 'image' + (imgFile.type === 'image/png' ? '.png' : '.jpg') : '';
+                if(imgFile) {
+                    // 用英文名，避免中文乱码
+                    await zipWriter.add(imgFileName, new zip.BlobReader(imgFile));
+                }
                 // 语音
                 if(audioPreview.src) {
                     const audioBlob = await fetch(audioPreview.src).then(r=>r.blob());
@@ -589,6 +618,9 @@
                 }
                 // 祝福卡片
                 await zipWriter.add('card.png', new zip.BlobReader(await fetch(img.src).then(r=>r.blob())));
+                // 生成zip包内的预览html
+                let previewHtml = `\n<!DOCTYPE html>\n<html lang=\"zh-cn\">\n<head><meta charset=\"UTF-8\"><title>漂流瓶预览</title></head>\n<body>\n  <h2>信件内容</h2>\n  <pre>${letterContent}</pre>\n  ${imgFile ? `<h3>图片附件</h3><img src=\"${imgFileName}\" style=\"max-width:300px;\">` : '<p>无图片附件</p>'}\n</body>\n</html>\n`;
+                await zipWriter.add('preview.html', new zip.TextReader(previewHtml));
                 // 密码加密（可选）
                 const pwd = document.getElementById('password').value;
                 let zipBlob;

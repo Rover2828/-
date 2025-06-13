@@ -108,7 +108,7 @@
 </head>
 <body>
     <div class="container">
-        <img class="bottle-img" src="https://img.zcool.cn/community/01b1e95d2e2e2fa801216518a7e1e2.jpg@1280w_1l_2o_100sh.jpg" alt="漂流瓶">
+        <img class="bottle-img" src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80" alt="漂流瓶">
         <h1>漂流瓶时光信</h1>
         <form id="bottleForm" autocomplete="off">
             <!-- 匿名投递 -->
@@ -189,7 +189,6 @@
     </div>
     <!-- zip.js & smtp.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@zip.js/zip.js@2.7.28/dist/zip-full.min.js"></script>
-    <script src="https://smtpjs.com/v3/smtp.js"></script>
     <script>
         // 邮箱相关变量定义，防止未定义报错
         const adminMail = "liujunkaiqianyuyouzhen@Outlook.com";
@@ -241,7 +240,7 @@
         function showBottleMap() {
             const mapDiv = document.getElementById('bottleMap');
             mapDiv.style.display = 'block';
-            mapDiv.innerHTML = `<img src='https://img.zcool.cn/community/01b1e95d2e2e2fa801216518a7e1e2.jpg@1280w_1l_2o_100sh.jpg' style='width:80px;'><br><span style='color:#2a5d84;'>你的漂流瓶正在世界各地漂流...</span>`;
+            mapDiv.innerHTML = `<img src='https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=80&q=80' style='width:80px;'><br><span style='color:#2a5d84;'>你的漂流瓶正在世界各地漂流...</span>`;
         }
         // 投递动画
         function playSendAnimation() {

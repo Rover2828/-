@@ -109,7 +109,7 @@
 <body>
     <div class="container">
         <img class="bottle-img" src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80" alt="漂流瓶">
-        <h1>漂流瓶时光信</h1>
+        <h1>漂流瓶里的信</h1>
         <form id="bottleForm" autocomplete="off">
             <!-- 匿名投递 -->
             <label><input type="checkbox" id="anonymous" name="anonymous" style="margin-right:6px;">匿名投递</label>
@@ -160,6 +160,8 @@
                 <option value="email">邮件提醒</option>
                 <option value="sms">短信提醒</option>
             </select>
+            <input type="email" id="remindEmail" placeholder="请输入邮箱地址" style="display:none;width:100%;margin-bottom:16px;padding:8px;border-radius:8px;border:1px solid #b3d7e6;font-size:15px;">
+            <input type="tel" id="remindPhone" placeholder="请输入手机号码" style="display:none;width:100%;margin-bottom:16px;padding:8px;border-radius:8px;border:1px solid #b3d7e6;font-size:15px;">
             <!-- 发送前预览 -->
             <button type="button" class="send-btn" id="previewBtn" style="background:#6bb6ff;margin-bottom:10px;">预览信件</button>
             <button type="submit" class="send-btn">发送漂流瓶</button>
@@ -569,7 +571,13 @@
                 // --- 打包zip ---
                 const zipWriter = new zip.ZipWriter(new zip.BlobWriter("application/zip"));
                 // 文本内容
-                const letterContent = `编号: ${bottleId}\n类型: ${document.getElementById('type').value}\n收件人: ${document.getElementById('anonymous').checked?'匿名':document.getElementById('recipient').value}\n内容: ${document.getElementById('letter').value}\n收信时间: ${document.getElementById('time').value==='custom'?document.getElementById('customTime').value+'年后':document.getElementById('time').options[document.getElementById('time').selectedIndex].text}\n提醒: ${document.getElementById('remind').value}`;
+                const remindType = document.getElementById('remind').value;
+                const remindEmail = document.getElementById('remindEmail').value;
+                const remindPhone = document.getElementById('remindPhone').value;
+                let extraInfo = '';
+                if(remindType === 'email') extraInfo = `\n提醒邮箱: ${remindEmail}`;
+                if(remindType === 'sms') extraInfo = `\n提醒手机号: ${remindPhone}`;
+                const letterContent = `编号: ${bottleId}\n类型: ${document.getElementById('type').value}\n收件人: ${document.getElementById('anonymous').checked?'匿名':document.getElementById('recipient').value}\n内容: ${document.getElementById('letter').value}\n收信时间: ${document.getElementById('time').value==='custom'?document.getElementById('customTime').value+'年后':document.getElementById('time').options[document.getElementById('time').selectedIndex].text}\n提醒: ${remindType}${extraInfo}`;
                 await zipWriter.add('letter.txt', new zip.TextReader(letterContent));
                 // 图片
                 const imgFile = document.getElementById('image').files[0];
@@ -627,6 +635,27 @@
                 reader.readAsDataURL(blob);
             });
         }
+        // 选择提醒方式时显示邮箱或手机号输入框
+        document.getElementById('remind').addEventListener('change', function() {
+            const emailInput = document.getElementById('remindEmail');
+            const phoneInput = document.getElementById('remindPhone');
+            if(this.value === 'email') {
+                emailInput.style.display = 'block';
+                emailInput.required = true;
+                phoneInput.style.display = 'none';
+                phoneInput.required = false;
+            } else if(this.value === 'sms') {
+                phoneInput.style.display = 'block';
+                phoneInput.required = true;
+                emailInput.style.display = 'none';
+                emailInput.required = false;
+            } else {
+                emailInput.style.display = 'none';
+                emailInput.required = false;
+                phoneInput.style.display = 'none';
+                phoneInput.required = false;
+            }
+        });
     </script>
 </body>
 </html>

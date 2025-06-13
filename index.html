@@ -240,11 +240,40 @@
                 isRecording = false;
             }
         });
-        // 漂流瓶地图（简单模拟）
+        // 漂流瓶地图（优化版）
         function showBottleMap() {
             const mapDiv = document.getElementById('bottleMap');
-            mapDiv.style.display = 'block';
-            mapDiv.innerHTML = `<img src='https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=80&q=80' style='width:80px;'><br><span style='color:#2a5d84;'>你的漂流瓶正在世界各地漂流...</span>`;
+            mapDiv.style.display = 'flex';
+            mapDiv.style.justifyContent = 'center';
+            mapDiv.style.alignItems = 'center';
+            mapDiv.innerHTML = `
+                <div id="bottleMapInner" style="position:relative;width:320px;height:180px;background:#eaf6fb;border-radius:16px;box-shadow:0 4px 24px #0002;overflow:hidden;">
+                    <img src='https://img.icons8.com/color/480/000000/world-map.png' alt='世界地图' style='width:100%;height:100%;object-fit:cover;filter:brightness(0.97) contrast(1.1);'>
+                </div>
+                <div style='margin-left:18px;display:flex;flex-direction:column;justify-content:center;'>
+                    <span style='color:#2a5d84;font-size:15px;'>"${isEn ? langMap.en.map : langMap.zh.map}"</span>
+                </div>
+            `;
+            // 随机生成漂流瓶图标
+            const bottleIcon = 'https://img.icons8.com/emoji/48/000000/bottle-with-popping-cork.png';
+            const mapInner = document.getElementById('bottleMapInner');
+            const bottleCount = Math.floor(Math.random()*4)+3; // 3~6个
+            for(let i=0;i<bottleCount;i++){
+                const x = Math.random()*260+10; // 10~270
+                const y = Math.random()*120+10; // 10~130
+                const img = document.createElement('img');
+                img.src = bottleIcon;
+                img.style.position = 'absolute';
+                img.style.left = x+'px';
+                img.style.top = y+'px';
+                img.style.width = '28px';
+                img.style.opacity = '0.92';
+                img.style.transition = 'transform 0.8s cubic-bezier(.4,2,.6,1)';
+                img.style.transform = 'scale(0.7)';
+                setTimeout(()=>{img.style.transform='scale(1.1)';}, 100+Math.random()*600);
+                setTimeout(()=>{img.style.transform='scale(1)';}, 800+Math.random()*600);
+                mapInner.appendChild(img);
+            }
         }
         // 投递动画
         function playSendAnimation() {
@@ -443,10 +472,54 @@
                 if(w>=100){clearInterval(timer);}
             },80);
         }
-        // 发送后生成二维码和祝福卡片
+        // 发送后生成二维码和祝福卡片（优化版）
         function showQRCode(id){
-            document.getElementById('qrcode').style.display = 'block';
-            document.getElementById('qrcode').innerHTML = `<div style='margin-bottom:8px;'>漂流瓶编号：<b>${id}</b></div><img src='https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent('bottle-'+id)}' alt='二维码'>`;
+            // 获取主要信息
+            const type = document.getElementById('type').value;
+            const recipient = document.getElementById('anonymous').checked ? (isEn ? 'Anonymous' : '匿名') : document.getElementById('recipient').value;
+            const content = document.getElementById('letter').value.substring(0, 20) + (document.getElementById('letter').value.length > 20 ? '...' : '');
+            const time = document.getElementById('time').value === 'custom' ? document.getElementById('customTime').value + (isEn ? ' years later' : '年后') : document.getElementById('time').options[document.getElementById('time').selectedIndex].text;
+            // 组装二维码内容
+            const qrData = {
+                id,
+                type,
+                recipient,
+                content,
+                time
+            };
+            const qrStr = encodeURIComponent(JSON.stringify(qrData));
+            const qrcodeDiv = document.getElementById('qrcode');
+            qrcodeDiv.style.display = 'flex';
+            qrcodeDiv.style.justifyContent = 'center';
+            qrcodeDiv.innerHTML = `
+                <div style="background:#fff;border-radius:18px;box-shadow:0 4px 24px #0002;padding:18px 18px 18px 18px;display:flex;flex-direction:column;align-items:center;max-width:280px;width:100%;box-sizing:border-box;margin:0 auto;">
+                    <div style='color:#2a5d84;font-size:15px;margin-bottom:8px;word-break:break-all;'>${isEn ? langMap.en.bottleId : langMap.zh.bottleId}<b>${id}</b></div>
+                    <div style='background:#eaf6fb;border-radius:12px;padding:10px 10px 6px 10px;box-shadow:0 2px 8px #0001;width:100%;display:flex;flex-direction:column;align-items:center;margin-bottom:12px;'>
+                        <img id='qrImg' src='https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${qrStr}' alt='二维码' style='width:160px;max-width:100%;height:auto;display:block;margin:0 auto;'>
+                    </div>
+                    <div id='cardPreviewWrap' style='width:100%;display:flex;flex-direction:column;align-items:center;'></div>
+                    <button id='downloadQR' style='margin:16px 0 0 0;background:#6bb6ff;color:#fff;border:none;border-radius:8px;padding:6px 18px;font-size:15px;cursor:pointer;width:100%;max-width:180px;'>${isEn ? 'Download QR' : '下载二维码'}</button>
+                </div>
+            `;
+            // 祝福卡片图片追加到二维码下方，并自适应宽度（竖版）
+            const cardImg = document.querySelector('#qrcode img[alt="祝福卡片"]');
+            if(cardImg){
+                cardImg.style.display = 'block';
+                cardImg.style.maxWidth = '100%';
+                cardImg.style.height = 'auto';
+                cardImg.style.margin = '0 auto 0 auto';
+                document.getElementById('cardPreviewWrap').appendChild(cardImg);
+            }
+            // 下载二维码功能
+            document.getElementById('downloadQR').onclick = function(){
+                const qr = document.getElementById('qrImg');
+                const a = document.createElement('a');
+                a.href = qr.src;
+                a.download = `bottle_qr_${id}.png`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            };
         }
         document.getElementById('bottleForm').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -480,7 +553,18 @@
                 ctx.fillText('编号:'+bottleId,20,160);
                 let img = document.createElement('img');
                 img.src = card.toDataURL();
-                document.getElementById('qrcode').appendChild(img);
+                img.alt = '祝福卡片'; // 关键：加上alt属性，便于后续查找
+                // 优先插入到二维码下方的cardPreviewWrap区域
+                const cardWrap = document.getElementById('cardPreviewWrap');
+                if(cardWrap){
+                    img.style.display = 'block';
+                    img.style.maxWidth = '100%';
+                    img.style.height = 'auto';
+                    img.style.margin = '0 auto 0 auto';
+                    cardWrap.appendChild(img);
+                }else{
+                    document.getElementById('qrcode').appendChild(img);
+                }
 
                 // --- 打包zip ---
                 const zipWriter = new zip.ZipWriter(new zip.BlobWriter("application/zip"));

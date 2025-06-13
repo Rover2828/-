@@ -217,19 +217,23 @@
                     alert('当前浏览器不支持录音');
                     return;
                 }
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new window.MediaRecorder(stream);
-                audioChunks = [];
-                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-                mediaRecorder.onstop = () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                    const audioUrl = URL.createObjectURL(audioBlob);
-                    audioPreview.src = audioUrl;
-                    audioPreview.style.display = 'block';
-                };
-                mediaRecorder.start();
-                recordBtn.textContent = '停止录音';
-                isRecording = true;
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new window.MediaRecorder(stream);
+                    audioChunks = [];
+                    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        audioPreview.src = audioUrl;
+                        audioPreview.style.display = 'block';
+                    };
+                    mediaRecorder.start();
+                    recordBtn.textContent = '停止录音';
+                    isRecording = true;
+                } catch (err) {
+                    alert('未检测到麦克风或未授权访问麦克风，请检查设备和权限设置。');
+                }
             } else {
                 mediaRecorder.stop();
                 recordBtn.textContent = '开始录音';

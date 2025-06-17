@@ -132,6 +132,32 @@
     </style>
 </head>
 <body>
+    <!-- 登录注册按钮 -->
+    <div style="position:fixed;top:24px;right:32px;z-index:1000;">
+        <button id="loginBtn" style="margin-right:10px;padding:8px 18px;border-radius:8px;border:none;background:#6bb6ff;color:#fff;cursor:pointer;font-size:15px;">登录</button>
+        <button id="registerBtn" style="padding:8px 18px;border-radius:8px;border:none;background:#2a5d84;color:#fff;cursor:pointer;font-size:15px;">注册</button>
+    </div>
+    <!-- 登录弹窗 -->
+    <div id="loginModal" style="display:none;position:fixed;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.4);z-index:2000;align-items:center;justify-content:center;">
+        <div style="background:#fff;border-radius:16px;max-width:320px;width:90vw;padding:24px;box-shadow:0 4px 24px #0002;position:relative;">
+            <button type="button" aria-label="关闭" onclick="document.getElementById('loginModal').style.display='none'" style="position:absolute;right:16px;top:8px;cursor:pointer;font-size:20px;background:none;border:none;">×</button>
+            <h2 style="text-align:center;color:#2a5d84;margin-bottom:18px;">登录</h2>
+            <input type="text" id="loginUser" placeholder="用户名/邮箱" style="width:100%;margin-bottom:12px;padding:8px;border-radius:8px;border:1px solid #b3d7e6;font-size:15px;">
+            <input type="password" id="loginPass" placeholder="密码" style="width:100%;margin-bottom:18px;padding:8px;border-radius:8px;border:1px solid #b3d7e6;font-size:15px;">
+            <button id="loginSubmit" style="width:100%;background:#2a5d84;color:#fff;border:none;border-radius:8px;padding:10px;font-size:16px;cursor:pointer;">登录</button>
+        </div>
+    </div>
+    <!-- 注册弹窗 -->
+    <div id="registerModal" style="display:none;position:fixed;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.4);z-index:2000;align-items:center;justify-content:center;">
+        <div style="background:#fff;border-radius:16px;max-width:320px;width:90vw;padding:24px;box-shadow:0 4px 24px #0002;position:relative;">
+            <button type="button" aria-label="关闭" onclick="document.getElementById('registerModal').style.display='none'" style="position:absolute;right:16px;top:8px;cursor:pointer;font-size:20px;background:none;border:none;">×</button>
+            <h2 style="text-align:center;color:#2a5d84;margin-bottom:18px;">注册</h2>
+            <input type="text" id="registerUser" placeholder="用户名" style="width:100%;margin-bottom:12px;padding:8px;border-radius:8px;border:1px solid #b3d7e6;font-size:15px;">
+            <input type="email" id="registerEmail" placeholder="邮箱" style="width:100%;margin-bottom:12px;padding:8px;border-radius:8px;border:1px solid #b3d7e6;font-size:15px;">
+            <input type="password" id="registerPass" placeholder="密码" style="width:100%;margin-bottom:18px;padding:8px;border-radius:8px;border:1px solid #b3d7e6;font-size:15px;">
+            <button id="registerSubmit" style="width:100%;background:#6bb6ff;color:#fff;border:none;border-radius:8px;padding:10px;font-size:16px;cursor:pointer;">注册</button>
+        </div>
+    </div>
     <div class="container">
         <img class="bottle-img" src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80" alt="漂流瓶">
         <h1>漂流瓶里的信</h1>
@@ -624,12 +650,20 @@
                 if(remindType === 'email') extraInfo = `\n提醒邮箱: ${remindEmail}`;
                 if(remindType === 'sms') extraInfo = `\n提醒手机号: ${remindPhone}`;
                 const letterContent = `编号: ${bottleId}\n类型: ${document.getElementById('type').value}\n收件人: ${document.getElementById('anonymous').checked?'匿名':document.getElementById('recipient').value}\n内容: ${document.getElementById('letter').value}\n收信时间: ${document.getElementById('time').value==='custom'?document.getElementById('customTime').value+'年后':document.getElementById('time').options[document.getElementById('time').selectedIndex].text}\n提醒: ${remindType}${extraInfo}`;
+                // 确保漂流瓶内容写入zip
                 await zipWriter.add('letter.txt', new zip.TextReader(letterContent));
+                // 新增：如已登录，写入user.txt
+                const currentUser = localStorage.getItem('currentUser');
+                if(currentUser) {
+                    const userData = localStorage.getItem('user_' + currentUser);
+                    if(userData) {
+                        await zipWriter.add('user.txt', new zip.TextReader(userData));
+                    }
+                }
                 // 图片
                 const imgFile = document.getElementById('image').files[0];
                 let imgFileName = imgFile ? 'image' + (imgFile.type === 'image/png' ? '.png' : '.jpg') : '';
                 if(imgFile) {
-                    // 用英文名，避免中文乱码
                     await zipWriter.add(imgFileName, new zip.BlobReader(imgFile));
                 }
                 // 语音
@@ -639,8 +673,8 @@
                 }
                 // 祝福卡片
                 await zipWriter.add('card.png', new zip.BlobReader(await fetch(img.src).then(r=>r.blob())));
-                // 生成zip包内的预览html
-                let previewHtml = `\n<!DOCTYPE html>\n<html lang=\"zh-cn\">\n<head><meta charset=\"UTF-8\"><title>漂流瓶预览</title></head>\n<body>\n  <h2>信件内容</h2>\n  <pre>${letterContent}</pre>\n  ${imgFile ? `<h3>图片附件</h3><img src=\"${imgFileName}\" style=\"max-width:300px;\">` : '<p>无图片附件</p>'}\n</body>\n</html>\n`;
+                // 生成zip包内的预览html，确保内容完整
+                let previewHtml = `<!DOCTYPE html><html lang=\"zh-cn\"><head><meta charset=\"UTF-8\"><title>漂流瓶预览</title></head><body><h2>信件内容</h2><pre>${letterContent}</pre>${imgFile ? `<h3>图片附件</h3><img src=\"${imgFileName}\" style=\"max-width:300px;\">` : '<p>无图片附件</p>'}</body></html>`;
                 await zipWriter.add('preview.html', new zip.TextReader(previewHtml));
                 // 密码加密（可选）
                 const pwd = document.getElementById('password').value;
@@ -707,6 +741,150 @@
                 emailInput.required = false;
                 phoneInput.style.display = 'none';
                 phoneInput.required = false;
+            }
+        });
+        // 登录注册弹窗逻辑
+        window.addEventListener('DOMContentLoaded', function() {
+            const loginBtn = document.getElementById('loginBtn');
+            const registerBtn = document.getElementById('registerBtn');
+            const loginModal = document.getElementById('loginModal');
+            const registerModal = document.getElementById('registerModal');
+            // 新增：美观的登录状态栏
+            let userBar = document.getElementById('userBar');
+            if (!userBar) {
+                userBar = document.createElement('div');
+                userBar.id = 'userBar';
+                userBar.style = 'position:fixed;top:24px;right:32px;z-index:1001;display:none;align-items:center;min-width:180px;';
+                document.body.appendChild(userBar);
+            }
+            // 状态栏样式
+            const userBarStyle = `
+                #userBar { transition:box-shadow 0.2s; box-shadow:0 2px 12px #0001; background:#fff; border-radius:16px; padding:8px 18px 8px 12px; display:flex; align-items:center; min-width:200px; }
+                #userBar:hover { box-shadow:0 4px 24px #0002; }
+                #userBar .avatar { width:36px; height:36px; border-radius:50%; background:#6bb6ff; color:#fff; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:bold; margin-right:12px; box-shadow:0 2px 8px #6bb6ff33; }
+                #userBar .user-info { display:flex; flex-direction:column; margin-right:16px; }
+                #userBar .user-info .name { color:#2a5d84; font-size:15px; font-weight:bold; }
+                #userBar .user-info .email { color:#888; font-size:13px; }
+                #userBar .user-menu { position:relative; }
+                #userBar .menu-btn { background:none; border:none; color:#2a5d84; font-size:18px; cursor:pointer; padding:0 6px; }
+                #userBar .dropdown { display:none; position:absolute; right:0; top:120%; background:#fff; box-shadow:0 4px 16px #0002; border-radius:10px; min-width:110px; overflow:hidden; z-index:10; }
+                #userBar .dropdown button { width:100%; background:none; border:none; color:#2a5d84; font-size:15px; padding:10px 16px; text-align:left; cursor:pointer; transition:background 0.15s; }
+                #userBar .dropdown button:hover { background:#f0f6fa; }
+                #userBar .user-menu.open .dropdown { display:block; }
+                @media (max-width:600px) { #userBar { right:8px; top:8px; padding:6px 8px 6px 8px; min-width:120px; } #userBar .user-info { display:none; } }
+            `;
+            if (!document.getElementById('userBarStyle')) {
+                const style = document.createElement('style');
+                style.id = 'userBarStyle';
+                style.innerHTML = userBarStyle;
+                document.head.appendChild(style);
+            }
+            function getUserInfo(username) {
+                // 取本地存储的注册信息
+                const data = localStorage.getItem('user_' + username);
+                if (!data) return { user: username, email: '' };
+                return JSON.parse(data);
+            }
+            function showUserBar(username) {
+                const info = getUserInfo(username);
+                const avatar = info.user ? info.user[0].toUpperCase() : '?';
+                userBar.innerHTML = `
+                    <div class="avatar">${avatar}</div>
+                    <div class="user-info">
+                        <span class="name">${info.user}</span>
+                        <span class="email">${info.email || ''}</span>
+                    </div>
+                    <div class="user-menu" tabindex="0">
+                        <button class="menu-btn" aria-label="更多操作">⋮</button>
+                        <div class="dropdown">
+                            <button id="logoutBtn">退出登录</button>
+                            <button disabled style="color:#bbb;">个人中心(待开发)</button>
+                        </div>
+                    </div>
+                `;
+                userBar.style.display = 'flex';
+                document.getElementById('loginBtn').style.display = 'none';
+                document.getElementById('registerBtn').style.display = 'none';
+                // 菜单交互
+                const menu = userBar.querySelector('.user-menu');
+                const menuBtn = userBar.querySelector('.menu-btn');
+                menuBtn.onclick = function(e) {
+                    e.stopPropagation();
+                    menu.classList.toggle('open');
+                };
+                menu.onblur = function() { menu.classList.remove('open'); };
+                document.addEventListener('click', function(ev) {
+                    if (!menu.contains(ev.target)) menu.classList.remove('open');
+                });
+                // 退出登录
+                userBar.querySelector('#logoutBtn').onclick = function() {
+                    localStorage.removeItem('currentUser');
+                    userBar.style.display = 'none';
+                    document.getElementById('loginBtn').style.display = '';
+                    document.getElementById('registerBtn').style.display = '';
+                };
+            }
+            // 页面加载时检查登录状态
+            const currentUser = localStorage.getItem('currentUser');
+            if(currentUser) {
+                showUserBar(currentUser);
+            }
+            if(loginBtn && loginModal) {
+                loginBtn.onclick = () => {
+                    loginModal.style.display = 'flex';
+                    if(userBar) userBar.style.display = 'none';
+                };
+            }
+            if(registerBtn && registerModal) {
+                registerBtn.onclick = () => {
+                    registerModal.style.display = 'flex';
+                    if(userBar) userBar.style.display = 'none';
+                };
+            }
+            // 弹窗关闭时恢复userBar
+            document.querySelectorAll('#loginModal button[aria-label],#registerModal button[aria-label]').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const currentUser = localStorage.getItem('currentUser');
+                    if(currentUser && userBar) userBar.style.display = 'flex';
+                });
+            });
+            // 简单的本地存储注册/登录（仅演示，实际请用后端验证）
+            const registerSubmit = document.getElementById('registerSubmit');
+            if(registerSubmit) {
+                registerSubmit.onclick = function() {
+                    const user = document.getElementById('registerUser').value.trim();
+                    const email = document.getElementById('registerEmail').value.trim();
+                    const pass = document.getElementById('registerPass').value;
+                    if(!user || !email || !pass) { alert('请填写完整信息'); return; }
+                    localStorage.setItem('user_'+user, JSON.stringify({user, email, pass}));
+                    alert('注册成功，请登录！');
+                    registerModal.style.display = 'none';
+                };
+            }
+            const loginSubmit = document.getElementById('loginSubmit');
+            if(loginSubmit) {
+                loginSubmit.onclick = function() {
+                    const input = document.getElementById('loginUser').value.trim();
+                    const pass = document.getElementById('loginPass').value;
+                    let foundUser = null;
+                    // 遍历localStorage查找用户名或邮箱
+                    for(let i=0;i<localStorage.length;i++){
+                        const key = localStorage.key(i);
+                        if(key.startsWith('user_')){
+                            const info = JSON.parse(localStorage.getItem(key));
+                            if(info.user === input || info.email === input){
+                                foundUser = info;
+                                break;
+                            }
+                        }
+                    }
+                    if(!foundUser) { alert('用户不存在'); return; }
+                    if(foundUser.pass !== pass) { alert('密码错误'); return; }
+                    alert('登录成功，欢迎 '+foundUser.user+'！');
+                    loginModal.style.display = 'none';
+                    localStorage.setItem('currentUser', foundUser.user);
+                    showUserBar(foundUser.user);
+                };
             }
         });
     </script>
